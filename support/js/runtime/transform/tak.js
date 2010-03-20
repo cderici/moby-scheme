@@ -176,7 +176,7 @@ tak = function(x,y,z){
 	callcount = 0;
 	breakat = 10;
 
-	printContinuation = false;
+	printContinuation = true;
 
 	return Continuation.EstablishInitialContinuation(function(){return tak_an(x,y,z);});
 };

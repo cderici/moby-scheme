@@ -38,29 +38,26 @@ load("../support.js");
 var f = function() {
     var temp1;
     try {
-        temp1 = Continuation.CWCC(function(k) { return "hello"; } );
+        temp1 = Continuation.CWCC(function(k) { return Continuation.apply(k, "hello"); } );
     } catch (sce) {
+         if (! (sce instanceof SaveContinuationException)) { throw sce; }
          sce.Extend(new f0_frame());
 	 throw sce;
     }
     return f0(temp1);
 }
 
-var f_frame = function() {
-};
-f_frame.prototype = new ContinuationFrame;
-f_frame.prototype.Invoke = function(v) { return f(); };
-
 
 var f0 = function(temp1) {
     return [temp1, "world"];
 };
 var f0_frame = function(temp1) {
+    ContinuationFrame.call(this);
     this.temp1 = temp1;
 };
-f0_frame.prototype = new ContinuationFrame;
+f0_frame.prototype = new ContinuationFrame();
 f0_frame.prototype.Invoke = function(v) { return f0(v); }
-
+f0_frame.prototype.toString = function() { return "[f0_frame]"; }
 
 // Let's try to test this code.
 
