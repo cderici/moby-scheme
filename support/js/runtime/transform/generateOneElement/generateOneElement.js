@@ -154,9 +154,9 @@ function generateOneElementAtATime(lst){
 			// this is only for readability
 			var func = function(element){
 						//alert("func -- element: " + element)
-						Continuation.CWCC(function(resumeHere){
-													controlState = resumeHere;
-													return Continuation.apply(ret,element);
+						ret = Continuation.CWCC(function(resumeHere){
+												controlState = resumeHere;
+												return Continuation.apply(ret,element);
 												});
 			};
 			map(func , lst);
