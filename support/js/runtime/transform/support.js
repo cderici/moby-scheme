@@ -11,6 +11,8 @@ ContinuationFrame = function(){
 };
 
 ContinuationFrame.prototype.Reload = function(frames_above, restart_value){
+	//alert("Reload : " + this);
+	//alert("Reload -- restart_value " + restart_value);
     				  
     var continue_value;
     if (frames_above === null) {
@@ -23,6 +25,7 @@ ContinuationFrame.prototype.Reload = function(frames_above, restart_value){
 	return this.Invoke(continue_value);
     } catch(sce) {
         if (! (sce instanceof SaveContinuationException)) { throw sce; }
+	//alert("Reload -- appending, current : " + this.continuation);
 	sce.Append(this.continuation);
 	throw sce;
     }
@@ -116,10 +119,12 @@ Continuation.BeginUnwind = function(){
 
 Continuation.CWCC = function(receiver){
     try {
+		//alert("CWCC -- receiver : " + receiver);
         Continuation.BeginUnwind();
     } catch(sce) {
         if (! (sce instanceof SaveContinuationException)) { throw sce; }
 	sce.Extend(new CWCC_frame0(receiver));
+	//alert("throwing cwcc");
 	throw sce;
     }
     return null;
@@ -134,6 +139,7 @@ Continuation.apply = function(k, v) {
 Continuation.EstablishInitialContinuation = function(thunk){
     while (true){
 	try {
+		//alert("EIC -- thunk : " + thunk);
 	    return Continuation.InitialContinuationAux(thunk);
 	} catch(wic) {
 	    if (! (wic instanceof WithinInitialContinuationException)) { throw wic; }
@@ -145,13 +151,16 @@ Continuation.EstablishInitialContinuation = function(thunk){
 // thunk -> object
 Continuation.InitialContinuationAux = function(thunk){
     try {
+	//alert("ICA trying : " + thunk);
 	return thunk();
     } catch(sce) {
         if (sce instanceof SaveContinuationException) { 
+		//alert("init aux: sce catch")
 	    var k = sce.toContinuation();
 	    throw new WithinInitialContinuationException(
 		makeWICThunk(k));
         } else if (sce instanceof ReplaceContinuationException)  {
+		//alert("init aux: rce catch");
 	    throw new WithinInitialContinuationException(
 		makeReplaceContinuationThunk(sce));
         } else {
@@ -161,6 +170,7 @@ Continuation.InitialContinuationAux = function(thunk){
 };
 
 var makeWICThunk = function(k) {
+	//alert("makeWICthunk");
     return function() {
         var escapingContinuation = k.adjustForEscape();
 	return k.reload(escapingContinuation);
@@ -184,6 +194,14 @@ CWCC_frame0 = function(receiver){
 };
 CWCC_frame0.prototype = new ContinuationFrame();
 CWCC_frame0.prototype.Invoke = function(return_value){
+
+	if(this.receiver instanceof Continuation)
+	{
+		//alert("CWCC Invoke receiver is : " + this.receiver);
+		return this.receiver.frames.rest.first.Invoke(return_value);
+	}
+
+	//alert("CWCC Invoke normal receiver : " + this.receiver);
     return this.receiver(return_value);
 };
 CWCC_frame0.prototype.toString = function() { return "[CWCC_frame0]"; };
