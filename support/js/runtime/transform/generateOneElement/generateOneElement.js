@@ -28,11 +28,12 @@ load("../support.js");
 
 (generate-digit)
 (generate-digit)
+(generate-digit)
 
 should give
 0
 1
-
+2
 
 --- These should translate to JS code: ---
 
@@ -61,7 +62,7 @@ function generateOneElementAtATime(lst){
 	return function(){return callCC(controlState);};
 }
 
-var generateDigit = generateOneElementAtATime(plt.Kernel.list([1,2,3,4,5,6,7,8,9]));
+var generateDigit = generateOneElementAtATime(plt.Kernel.list([0,1,2,3,4,5,6,7,8,9]));
 
 --- After A-Normalization : ---
 
@@ -88,40 +89,102 @@ function generateOneElementAtATime(lst){
 	return function(){return callCC(controlState);};
 }
 
-var generateDigit = generateOneElementAtATime(plt.Kernel.list([1,2,3,4,5,6,7,8,9]));
+var generateDigit = generateOneElementAtATime(plt.Kernel.list([0,1,2,3,4,5,6,7,8,9]));
+
+function f() {
+	generateDigit();
+	generateDigit();
+	generateDigit();
+}
 
 Which should then fragmented & annotated to the following code:
 */
 
-var generateDigit = generateOneElementAtATime(plt.Kernel.list([1,2,3,4,5,6,7,8,9]));
+var f = function(){
+	try{
+		generateDigit();
+	}catch(e){
+		if(e instanceof SaveContinuationException){
+			e.Extend(new f_frame0());
+			//alert("throwing sce with f_frame0");
+			throw e;
+		}
+		throw e;
+	}
+	return f_1();
+}
+
+var f_frame0 = function(){
+}
+
+f_frame0.prototype = new ContinuationFrame();
+f_frame0.prototype.Invoke = function(return_value) { //alert("f_frame0 Invoke");
+													return f_1(); }
+f_frame0.prototype.toString = function() { return "[f_frame0]"; }
+
+var f_1 = function(){
+	try{
+		//alert("f_1");
+		generateDigit();
+	}catch(e){
+		if(e instanceof SaveContinuationException){
+			e.Extend(new f_frame1());
+			throw e;
+		}
+		throw e;
+	}
+	return generateDigit();
+}
+
+var f_frame1 = function(){
+}
+
+f_frame1.prototype = new ContinuationFrame();
+f_frame1.prototype.Invoke = function(return_value) { return generateDigit(); }
+f_frame1.prototype.toString = function() { return "[f_frame1]"; }
+
+
+
+var generateDigit = generateOneElementAtATime(plt.Kernel.list([0,1,2,3,4,5,6,7,8,9]));
 
 function generateOneElementAtATime(lst){
 
-	var controlState = function(ret){
-		var newFrames = new FrameList(new ContinuationApplication_frame0(), null);
-		ret = new Continuation(newFrames,null);
-		// this is only for readability
-		var func = function(element){
-					// try{
-					ret = Continuation.CWCC(function(resumeHere){
-								controlState = resumeHere;
-								return Continuation.apply(ret,element);
-								});
-					// }catch(sce){
-					//	ret = sce;
-					//	throw sce;
-					// }
-		};
-
-		map(func , lst);
-		
+	var controlState = function(ret){		
+		try{
+			// this is only for readability
+			var func = function(element){
+						//alert("func -- element: " + element)
+						Continuation.CWCC(function(resumeHere){
+													controlState = resumeHere;
+													return Continuation.apply(ret,element);
+												});
+			};
+			map(func , lst);
+		} catch(e) {
+			if(e instanceof SaveContinuationException) {
+				e.Extend(new controlState_frame(ret));
+				throw e;
+			}
+			throw e;
+		}
 		return Continuation.apply(ret,"fell-down");
 	};
 
-	return function(){return Continuation.CWCC(controlState);};
+	var controlState_frame = function(ret){
+		this.ret = ret;
+	}
+
+	controlState_frame.prototype = new ContinuationFrame();
+	controlState_frame.prototype.Invoke = function(return_value) { return Continuation.apply(this.ret,"fell-down"); }
+	controlState_frame.prototype.toString = function() { return "[controlState_frame]"; }
+
+	return function(){
+					//alert("generateDigit()");
+					return Continuation.CWCC(controlState);};
 }
 
 function map(f, arglist){
+	//alert("map");
 	if(arglist.isEmpty()){
 		return plt.types.Empty.EMPTY;
 	}
@@ -129,13 +192,17 @@ function map(f, arglist){
 	try{
 		temp1 = f(arglist.first());
 	}catch(sce){
-		sce.Extend(new map_frame0(f,arglist));
+		if(sce instanceof SaveContinuationException) {
+			sce.Extend(new map_frame0(f,arglist));
+			throw sce;
+		}
 		throw sce;
 	}
 		return map1(temp1, f, arglist);
 }
 
 function map1(temp1, f, arglist){
+	//alert("map1");
 	var temp2;
 	try{
 		temp2 = map(f, arglist.rest());
@@ -174,14 +241,5 @@ map_frame1.prototype.toString = function() { return "[map_frame1]"; }
 // testing
 
 var test = function() {
-/*
-Continuation.EstablishInitialContinuation(function() { 
-				return generateDigit();
-			});
-*/
-
-    return Continuation.EstablishInitialContinuation(function() { 
-				return generateDigit();
-			});
-
+    return Continuation.EstablishInitialContinuation(function() { return f(); });
 }
