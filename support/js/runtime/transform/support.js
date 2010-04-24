@@ -24,7 +24,8 @@ ContinuationFrame.prototype.Reload = function(frames_above, restart_value){
     try {
 	return this.Invoke(continue_value);
     } catch(sce) {
-        if (! (sce instanceof SaveContinuationException)) { throw sce; }
+        if (! (sce instanceof SaveContinuationException)) { //alert("throwing not sce");
+															throw sce; }
 	//alert("Reload -- appending, current : " + this.continuation);
 	sce.Append(this.continuation);
 	throw sce;
@@ -111,7 +112,17 @@ Continuation.prototype.reload = function(restart_value){
     return rev.first.Reload(rev.rest, restart_value);
 };
 
-Continuation.prototype.toString = function() { return "[Continuation]"; };
+Continuation.prototype.toString = function() { 
+			var retval = "[Continuation] :\n" + 
+							"frames;\n";
+			
+			var temp = this.frames;
+			while(temp !== null){
+				retval += temp.first + "\n";
+				temp = temp.rest;
+			}
+			return retval;
+};
 
 Continuation.BeginUnwind = function(){
     throw new SaveContinuationException();
@@ -124,13 +135,14 @@ Continuation.CWCC = function(receiver){
     } catch(sce) {
         if (! (sce instanceof SaveContinuationException)) { throw sce; }
 	sce.Extend(new CWCC_frame0(receiver));
-	//alert("throwing cwcc");
+	//alert("throwing sce.Extend( cwcc_frame0 )");
 	throw sce;
     }
     return null;
 };
 
 Continuation.apply = function(k, v) {
+	//alert("continuation apply");
     throw new ReplaceContinuationException(k, v);
 };
 
@@ -173,11 +185,14 @@ var makeWICThunk = function(k) {
 	//alert("makeWICthunk");
     return function() {
         var escapingContinuation = k.adjustForEscape();
+		//alert("k : \n" + k);
+		//alert("escape : \n" + escapingContinuation);
 	return k.reload(escapingContinuation);
     }
 };
 
 var makeReplaceContinuationThunk = function(rce) {
+	//alert("makeRCThunk");
     return function() {
 	return rce.k.reload(rce.v);
     };
@@ -198,7 +213,8 @@ CWCC_frame0.prototype.Invoke = function(return_value){
 	if(this.receiver instanceof Continuation)
 	{
 		//alert("CWCC Invoke receiver is : " + this.receiver);
-		return this.receiver.frames.rest.first.Invoke(return_value);
+		//alert("CWCC Invoke return_value is : " + return_value);
+		return Continuation.apply(this.receiver, return_value);
 	}
 
 	//alert("CWCC Invoke normal receiver : " + this.receiver);
@@ -215,6 +231,7 @@ ContinuationApplication_frame0 = function(){
 ContinuationApplication_frame0.prototype = new ContinuationFrame();
 
 ContinuationApplication_frame0.prototype.Invoke = function(return_value){
+	//alert("CA_frame Invoke, returning : " + return_value);
     return return_value;
 };
 ContinuationApplication_frame0.prototype.toString = function() { 
