@@ -101,12 +101,13 @@ Which should then fragmented & annotated to the following code:
 */
 
 var f = function(){
+	//alert("f");
 	try{
 		generateDigit();
 	}catch(e){
 		if(e instanceof SaveContinuationException){
 			e.Extend(new f_frame0());
-			//alert("throwing sce with f_frame0");
+			//alert("throwing sce.Extend( f_frame0 )");
 			throw e;
 		}
 		throw e;
@@ -154,11 +155,33 @@ function generateOneElementAtATime(lst){
 			// this is only for readability
 			var func = function(element){
 						//alert("func -- element: " + element)
+						try{
 						ret = Continuation.CWCC(function(resumeHere){
 												controlState = resumeHere;
+												//alert("applying " + ret + " to element : " + element);
 												return Continuation.apply(ret,element);
 												});
+						}catch(sce){
+							if(!(sce instanceof SaveContinuationException)) {//alert("throwing not sce");
+									throw sce;}
+							sce.Extend(new func_frame0(element));
+							//alert("throwing sce.Extend( func_frame0 )");
+							throw sce;
+						}
 			};
+			var func_frame0 = function(element){
+				this.element = element;
+			};
+
+			func_frame0.prototype = new ContinuationFrame();
+			func_frame0.prototype.Invoke = function(return_value) { 
+				//alert("func_frame Invoke, return_value = " + return_value + "\nelement = " + this.element);
+				ret = return_value;
+				//alert("func_frame Invoke, returning element : " + this.element);
+				//return this.element;
+			};
+			func_frame0.prototype.toString = function() { return "[func_frame0]"; };
+
 			map(func , lst);
 		} catch(e) {
 			if(e instanceof SaveContinuationException) {
@@ -193,7 +216,8 @@ function map(f, arglist){
 		temp1 = f(arglist.first());
 	}catch(sce){
 		if(sce instanceof SaveContinuationException) {
-			sce.Extend(new map_frame0(f,arglist));
+			sce.Extend(new map_frame0(f,arglist.rest()));
+			//alert("throwing sce.Extend( map_frame0 )");
 			throw sce;
 		}
 		throw sce;
@@ -201,14 +225,15 @@ function map(f, arglist){
 		return map1(temp1, f, arglist);
 }
 
-function map1(temp1, f, arglist){
+function map1(temp1, f, arglistrest){
 	//alert("map1");
 	var temp2;
 	try{
-		temp2 = map(f, arglist.rest());
+		temp2 = map(f, arglistrest);
 	}catch(sce){
 		if(sce instanceof SaveContinuationException){
 			sce.Extend(new map_frame1(temp1));
+			//alert("throwing sce.Extend( map_frame1 )");
 			throw sce;
 		}
 		throw sce;
@@ -217,6 +242,7 @@ function map1(temp1, f, arglist){
 }
 
 function map2(temp1,temp2){
+	//alert("map2");
 	return plt.Kernel.cons(temp1,temp2);
 }
 
