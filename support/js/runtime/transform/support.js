@@ -54,6 +54,15 @@ FrameList.reverse = function(originalFrameList){
     return result;
 };
 
+FrameList.prototype.length = function() {
+	temp1 = this;
+	var ret = 0;
+	while(temp1 != null){
+		ret++;
+		temp1 = temp1.rest();
+	}
+	return ret;
+};
 
 FrameList.prototype.toString = function() { return "[FrameList]"; }
 
